@@ -1,3 +1,7 @@
+<p align="center">
+<img src="https://i.imgur.com/KcNPs2m.jpeg" alt="Active Directory" width=500 height=300/> 
+</p>
+
 <h1>Understanding DNS</h1>
 <p>DNS Records and DNS Cache Management</p>
 
