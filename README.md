@@ -2,8 +2,11 @@
 <img src="https://i.imgur.com/KcNPs2m.jpeg" alt="Active Directory" width=500 height=300/> 
 </p>
 
-<h1>Understanding DNS</h1>
-<p>DNS Records and DNS Cache Management</p>
+<h1>Understanding DNS – DNS Records & Cache Management</h1>
+<p>DNS (Domain Name System) is often described as the “phonebook of the internet.” It translates human-readable names (like www.google.com) into IP addresses that computers use to communicate.</p>
+
+<h1>🧠 Overview</h1>
+<p>In this lab, we’ll explore A-records, CNAME records, and DNS caching through hands-on exercises in an Azure-based environment.</p>
 
 <h2>Environments and Technologies to use</h2>
 
@@ -17,108 +20,144 @@
 
 -----
 
+<h1>📚 DNS Concepts to Understand Before Starting</h1>
+
+- `A Record (Address Record)`: Maps a hostname to an IPv4 address.
+- `CNAME Record (Canonical Name)`: Creates an alias from one name to another.
+- `PTR Record`: Maps an IP address to a hostname (reverse lookup).
+- `DNS Cache`: Temporary storage of DNS lookups to speed up name resolution.
+- `Forward Lookup Zone`: Where DNS stores hostname → IP mappings.
+- `nslookup`: Command-line tool to query DNS records.
+- `ipconfig /flushdns`: Clears the local DNS cache.
+
+-----
+
 ### Part 1: A-Record Creation & Testing
 
-- Log Into Both VMs
- - Log into `DC-1` as `mydomain.com\jane_admin` and password `Cyberlab123!`
-- Log into `Client-1` as `mydomain.com\jane_admin` and password `Cyberlab123!`
+1.	Log into Both VMs:
+   - `DC-1`: `mydomain.com\jane_admin` / `Cyberlab123!`
+   - `Client-1`: `mydomain.com\jane_admin` / `Cyberlab123!`
 
-### Part 2: Ping and nslookup Fails
+-----
 
-- On `Client-1`:
-  - Open `Command Prompt`
-	- Type `ping mainframe`
+### Part 2: Initial Ping and nslookup (Fails)
+
+1. On `Client-1`, open `Command Prompt` and type: `ping mainframe`
 
 ***You should see "Ping request could not find host mainframe.”***
 
-- Next, run `nslookup mainframe`
+2. Check `DNS` resolution, run: `nslookup mainframe`
 
 ***This will fail because mainframe does not exist in DNS yet.***
 
+-----
+
 ### Part 3: Create an `A-Record` on `DC-1`
 
-- On `DC-1`
-	- Open `Server Manager`
-	- Go to `Tools` > `DNS`
-	- In the left pane:
-	  - Expand your server name
-	  - Expand Forward Lookup Zones
-	  - Click your domain (e.g., mydomain.com)
-- In the right pane, right-click > `New Host` (A or AAAA)
-   - Fill out:
-	   - Name: `mainframe`
-	   - IP address: Enter `DC-1’s Private IP` (e.g., `10.0.0.4`)
-	   - Check: “Create associated pointer (PTR) record”
-	   - Click `Add Host`
-- You’ll get a success message. Click `Done`
+1.	On `DC-1`, open `Server Manager` → `Tools` > `DNS`.
+2.	Expand:
+     - Your server name
+     - Forward Lookup Zones
+     - Your domain (e.g., mydomain.com)
+3.	Right-click → `New Host (A or AAAA)`:
+     - Name: `mainframe`
+     - IP Address: `DC-1`’s Private IP (look for that in Azure) (e.g., `10.0.0.4`)
+     - Check: Create associated pointer (PTR) record
+     - Click Add Host
 
-### Part 4: Ping Again from `Client-1`
+***You’ll get a success confirmation.***
 
-- Back on `Client-1`, in `Command Prompt`: `ping mainframe`
+-----
+
+### Part 4: Test the `A-Record`
+
+- Back on `Client-1`, in `Command Prompt` type: `ping mainframe`
 
 ***This time, it should successfully ping the DC’s private IP address! You’ve just created and tested an A-record DNS entry.***
 
-### Part 5: Local DNS Cache Exercise
+-----
 
-- Change the A-Record’s IP on `DC-1`
+### Part 5: Local DNS Cache in Action
 
-- Open DNS Manager again
-- Go to `mydomain.com` zone
-- Right-click the mainframe A-record > `Properties`
-- Change the IP to: `8.8.8.8`
-- Click `OK`
+1. Change the mainframe `A-record`’s IP in DNS Manager on `DC-1` to:
+    - Open DNS Manager again
+    - Go to `mydomain.com` zone
+    - Right-click the mainframe A-record > `Properties`
+    - Change the IP to: `8.8.8.8`
+    - Click `OK`
+  
+-----
 
-### Part 6: Observe Cached Entry on `Client-1`
+### Part 6: Observe Cached Entry
 
-- Try pinging again: `ping mainframe`
+1. On `Client-1` on `Command Prompt`, type: `ping mainframe`
 
-***It will still ping the OLD IP — because it’s cached.***
+***It will still ping the OLD IP — because it’s cached locally.***
 
-- View the DNS cache: `ipconfig /displaydns`
+2. View the DNS cache: `ipconfig /displaydns`
 
-***Look for the mainframe entry showing the old IP (DC-1’s IP).***
+***You should see mainframe mapped to the old IP.***
+
+-----
 
 ### Part 7: Flush the Cache
 
-- On `Client-1`, run `ipconfig /flushdns`
+1. On `Client-1`, clear the cache by running this code: `ipconfig /flushdns`
 
-***You should see: “Successfully flushed the DNS Resolver Cache.”***
+***You should see: “Successfully flushed the DNS Resolver Cache.” To confirm it’s gone: `ipconfig /displaydns` It will now be empty or very limited.***
 
-***To confirm it’s gone: `ipconfig /displaydns` It will now be empty or very limited.***
+2. Check again by running this code: `ipconfig /displaydns`
 
-### Part 8: Re-Ping mainframe
+***Now it’s empty or minimal.***
 
-- Now ping again: `ping mainframe`
+-----
 
-***You’ll now see the new IP: `8.8.8.8`, as pulled from the updated DNS record.***
+### Part 8: Verify Updated Resolution
 
-### Part 9: CNAME Record Exercise
+1. Ping again: `ping mainframe`
 
-- Create a CNAME Record on `DC-1`
-- Back to `DC-1`
-  - In DNS Manager, under `mydomain.com`
-	   - Right-click > `New Alias (CNAME)`
-	   - Alias name: `search`
-	   - Fully qualified domain name (FQDN) for target host: `www.google.com`
-	   - Click `OK`
+***✅ This should now show 8.8.8.8 from the updated DNS record.***
 
-### Part 10: Test the CNAME Record from `Client-1`
+-----
 
-- Back on `Client-1`
-  - In Command Prompt: `ping search.mydomain.com`
+### Part 9: Create a CNAME Record
 
-***It may not return Google’s IP directly (some external CNAME targets may not respond to ping), but the name resolution should succeed.***
+1. On `DC-1`:
+	- In `DNS Manager`, under `mydomain.com` → Right-click → `New Alias (CNAME)`.
+2.	Fill out:
+     - Alias name: `search`
+	 - FQDN for target host: `www.google.com`
+3.	Click `OK`.
 
-- Try: `nslookup search`
-- You should see:
+-----
+
+### Part 10: Test the CNAME Record
+
+1. Test the CNAME Record: `ping search.mydomain.com`
+
+***Ping might fail (Google may block ICMP), but DNS resolution still works.***
+
+2. Test: `nslookup search`
+3. You should see:
    - Name: `search.mydomain.com`
 	 - Alias: `www.google.com`
 	 - Address: `[Google’s IP address]`
 
-***This confirms your CNAME record is resolving properly!***
+***This confirms the CNAME works.***
+
+-----
+
+<h1>🔍 Why This Matters in the Real World</h1>
+
+- `A-Records` let you map local services to IPs for easy access.
+- `CNAME`s simplify name changes by creating easy-to-remember aliases.
+- `DNS Caching` speeds up lookups but can cause issues if old records linger — flushing helps resolve them.
+- `PTR Records` are critical for email servers and reverse lookups.
+
+<p>Understanding DNS is foundational for network administration, web hosting, and cybersecurity. It’s the silent backbone of how users and systems find resources across networks.</p>
 
 -----
 
 ### Conclusion
 
-<p>You've understood on how DNS work and how it was created and resolved “mainframe” to DC-1’s IP including the DNS Cache. You observed and flushed local DNS cache and mapping how the “search” to www.google.com and resolved it.</p>
+<p>You've understood now on how DNS work and how it was created and resolved “mainframe” to DC-1’s IP including the DNS Cache. You observed and flushed local DNS cache and mapping how the “search” to www.google.com and resolved it.</p>
